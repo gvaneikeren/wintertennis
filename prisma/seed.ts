@@ -20,7 +20,6 @@ async function main() {
     prisma.player.deleteMany(),
     prisma.teamMembership.deleteMany(),
     prisma.team.deleteMany(),
-    prisma.account.deleteMany(),
     prisma.user.deleteMany(),
     prisma.rateLimit.deleteMany(),
   ]);

@@ -1,10 +1,9 @@
 "use server";
 
 import { AuthError as NextAuthError } from "next-auth";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { INVITE_COOKIE, signIn, signOut } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser, UserError, run } from "@/lib/server/auth-guards";
 import { hashPassword, passwordProblem } from "@/lib/server/passwords";
@@ -37,10 +36,6 @@ export async function loginAction(_: FormState, form: FormData): Promise<FormSta
     }
     throw e; // NEXT_REDIRECT
   }
-}
-
-export async function googleLoginAction(form: FormData) {
-  await signIn("google", { redirectTo: safeRedirect(form.get("next")) });
 }
 
 export async function logoutAction() {
@@ -88,20 +83,6 @@ export async function acceptInviteAction(token: string) {
   const res = await run(() => acceptInvite(user.id, token));
   if (!res.ok) return res;
   redirect("/team");
-}
-
-/** Remembers the invite during the Google round-trip; /invite/accept consumes it afterwards. */
-export async function googleInviteAction(form: FormData) {
-  const token = String(form.get("token") ?? "");
-  if (!(await findValidInvite(token))) redirect("/login?error=invite");
-  (await cookies()).set(INVITE_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 30 * 60,
-  });
-  await signIn("google", { redirectTo: "/invite/accept" });
 }
 
 export async function requestPasswordResetAction(_: FormState, form: FormData): Promise<FormState> {

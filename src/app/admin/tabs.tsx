@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin", label: "Overzicht" },
   { href: "/admin/teams", label: "Teams" },
   { href: "/admin/schedule", label: "Programma" },
+  { href: "/admin/admins", label: "Beheerders" },
   { href: "/admin/log", label: "Log" },
 ];
 

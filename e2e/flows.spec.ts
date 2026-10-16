@@ -149,3 +149,29 @@ test("admin schedules a new pairing", async ({ page }) => {
   await page.goto("/admin/teams");
   await expect(page.getByRole("button", { name: "Aanvoerder uitnodigen" }).first()).toBeVisible();
 });
+
+test("admin adds a new administrator who sets a password", async ({ browser }) => {
+  const admin = await (await browser.newContext()).newPage();
+  await login(admin, "admin@example.com");
+  await admin.goto("/admin/admins");
+  const email = `beheer-${Date.now()}@example.com`;
+  await admin.getByLabel("E-mailadres").fill(email);
+  await admin.getByLabel("Naam (optioneel)").fill("Tweede Beheerder");
+  await admin.getByRole("button", { name: "Beheerder maken" }).click();
+  const link = (await admin.locator(".font-mono").textContent())!.trim();
+  await expect(admin.getByText("Nog geen wachtwoord")).toBeVisible();
+
+  // An existing captain is promoted directly
+  await admin.getByLabel("E-mailadres").fill("captain2@example.com");
+  await admin.getByRole("button", { name: "Beheerder maken" }).click();
+  await expect(admin.getByText("captain2@example.com is nu beheerder")).toBeVisible();
+
+  const second = await (await browser.newContext()).newPage();
+  await second.goto(new URL(link).pathname);
+  await second.getByLabel("Nieuw wachtwoord").fill("tweede-beheerder-pw");
+  await second.getByRole("button", { name: "Opslaan" }).click();
+  await expect(second).toHaveURL(/\/login\?reset=1/);
+  await login(second, email, "tweede-beheerder-pw");
+  await second.goto("/admin/admins");
+  await expect(second.getByRole("heading", { name: "Beheerders" })).toBeVisible();
+});

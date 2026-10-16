@@ -47,10 +47,10 @@ The e2e flows are stateful and run serially on the `mobile-chrome` project only.
   - The approver must belong to the other team. `APPROVED` is locked, and only an admin can reopen it.
   - When an admin who is outside both teams submits a score, it is approved immediately.
 - **Auth:**
-  - Sign-in uses credentials (bcrypt) plus Google (only enabled when the `AUTH_GOOGLE_*` env vars are set), with JWT sessions.
+  - Sign-in is email + password only (Auth.js credentials provider, bcrypt), with JWT sessions and no database adapter.
   - The current user is always reloaded from the DB in `getCurrentUser()`.
   - Sign-up only happens through invites. The invite token is hashed (SHA-256), single-use and valid for 7 days.
-  - Google sign-up carries the token in the `wt_invite` cookie through OAuth, and `/invite/accept` consumes it.
+- **Administrators:** `User.isAdmin`. Existing admins add more admins at `/admin/admins` (an existing account is promoted directly; a new email gets an account plus a 7-day set-password link). The last admin cannot be removed. Bootstrap the first admin with `npm run create-admin`.
 - **Invites:** the admin invites captains; captains invite members. They go out by email (SMTP) or a WhatsApp `wa.me` link (no API involved), or as a copyable link.
 
 ## Conventions

@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Alert, Card } from "@/components/ui";
-import { GoogleIcon } from "@/components/google-button";
-import { googleEnabled } from "@/auth";
 import { getCurrentUser } from "@/lib/server/auth-guards";
 import { findValidInvite } from "@/lib/server/invites";
-import { googleInviteAction } from "@/app/actions/auth";
 import { nl } from "@/lib/nl";
 import { AcceptButton, RegisterForm } from "./forms";
 
@@ -47,19 +44,6 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         </Card>
       ) : (
         <Card className="space-y-4 p-5">
-          {googleEnabled && (
-            <>
-              <form action={googleInviteAction}>
-                <input type="hidden" name="token" value={token} />
-                <button className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-surface font-semibold hover:bg-surface-2">
-                  <GoogleIcon /> Doorgaan met Google
-                </button>
-              </form>
-              <div className="flex items-center gap-3 text-xs text-muted">
-                <span className="h-px flex-1 bg-border" /> of maak een account <span className="h-px flex-1 bg-border" />
-              </div>
-            </>
-          )}
           <RegisterForm token={token} email={invite.email ?? ""} />
           <p className="text-center text-sm text-muted">
             Al een account?{" "}

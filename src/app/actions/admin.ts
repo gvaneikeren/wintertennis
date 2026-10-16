@@ -6,6 +6,9 @@ import { prisma } from "@/lib/server/db";
 import { requireAdmin, run, UserError } from "@/lib/server/auth-guards";
 import { audit } from "@/lib/server/audit";
 import { FIXTURE_TEMPLATE, saturdaysBetween, validatePairings } from "@/lib/schedule";
+import { newToken } from "@/lib/server/tokens";
+import { appUrl, mailConfigured, sendMail } from "@/lib/server/mail";
+import { whatsappUrl } from "@/lib/invite-message";
 
 const id = z.string().min(1).max(40);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ongeldige datum");
@@ -159,5 +162,64 @@ export async function deletePairing(fixtureId: string) {
     await prisma.fixture.delete({ where: { id: fid } });
     await audit({ userId: admin.id, action: "fixture.delete", entity: "Fixture", entityId: fid });
     revalidateAll();
+  });
+}
+
+export type AdminInviteResult = { existing: boolean; link: string | null; whatsapp: string | null; emailed: boolean };
+
+/**
+ * Makes someone an administrator. An existing account is promoted directly; for a new email
+ * an account is created and a one-time "set password" link (7 days) is returned and emailed.
+ */
+export async function addAdmin(input: unknown) {
+  return run<AdminInviteResult>(async () => {
+    const admin = await requireAdmin();
+    const p = z
+      .object({
+        email: z.email("Ongeldig e-mailadres").max(200).transform((e) => e.toLowerCase().trim()),
+        name: z.string().trim().max(60).optional(),
+      })
+      .safeParse(input);
+    if (!p.success) throw new UserError(p.error.issues[0].message);
+    const { email, name } = p.data;
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing?.isAdmin) throw new UserError("Deze persoon is al beheerder");
+    if (existing) {
+      await prisma.user.update({ where: { id: existing.id }, data: { isAdmin: true } });
+      await audit({ userId: admin.id, action: "admin.add", entity: "User", entityId: existing.id, details: { email } });
+      revalidatePath("/admin/admins");
+      return { existing: true, link: null, whatsapp: null, emailed: false };
+    }
+
+    const user = await prisma.user.create({ data: { email, name: name || null, isAdmin: true } });
+    const { token, hash } = newToken();
+    await prisma.passwordResetToken.create({
+      data: { tokenHash: hash, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    });
+    const link = `${appUrl()}/reset-password/${token}`;
+    const text = `🎾 ${admin.name ?? "De beheerder"} heeft je beheerder gemaakt van de WinterTennis competitie. Stel via de link je wachtwoord in en log daarna in met ${email}. De link is 7 dagen geldig.`;
+    let emailed = false;
+    if (mailConfigured()) {
+      emailed = await sendMail({ to: email, subject: "Je bent beheerder van WinterTennis", text, linkLabel: "Wachtwoord instellen", link }).catch(
+        () => false,
+      );
+    }
+    await audit({ userId: admin.id, action: "admin.add", entity: "User", entityId: user.id, details: { email, created: true } });
+    revalidatePath("/admin/admins");
+    return { existing: false, link, whatsapp: whatsappUrl(text, link), emailed };
+  });
+}
+
+export async function removeAdmin(userId: string) {
+  return run(async () => {
+    const admin = await requireAdmin();
+    const uid = id.parse(userId);
+    if (uid === admin.id) throw new UserError("Je kunt jezelf niet als beheerder verwijderen");
+    const count = await prisma.user.count({ where: { isAdmin: true } });
+    if (count <= 1) throw new UserError("Er moet minimaal één beheerder overblijven");
+    await prisma.user.update({ where: { id: uid }, data: { isAdmin: false } });
+    await audit({ userId: admin.id, action: "admin.remove", entity: "User", entityId: uid });
+    revalidatePath("/admin/admins");
   });
 }

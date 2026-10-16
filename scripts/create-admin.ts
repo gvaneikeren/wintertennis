@@ -18,7 +18,6 @@ async function main() {
   const base = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
   console.log(`Admin: ${email}`);
   console.log(`Stel een wachtwoord in (24 uur geldig): ${base}/reset-password/${token}`);
-  console.log("Of log direct in met Google met hetzelfde e-mailadres.");
 }
 
 main().finally(() => prisma.$disconnect());

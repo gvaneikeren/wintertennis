@@ -3,7 +3,7 @@
 export function inviteText(teamName: string, role: "CAPTAIN" | "MEMBER", inviterName?: string | null): string {
   const who = inviterName ? `${inviterName} nodigt je uit` : "Je bent uitgenodigd";
   const as = role === "CAPTAIN" ? "als aanvoerder van" : "voor";
-  return `🎾 ${who} ${as} team ${teamName} in de WinterTennis competitie. Via de link maak je een account aan of log je in met Google. De link is 7 dagen geldig.`;
+  return `🎾 ${who} ${as} team ${teamName} in de WinterTennis competitie. Via de link maak je een account aan of log je in. De link is 7 dagen geldig.`;
 }
 
 /** Converts a Dutch or international phone number to the digits-only format wa.me expects. */
