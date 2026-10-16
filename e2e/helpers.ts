@@ -13,6 +13,6 @@ export async function login(page: Page, email: string, password = PASSWORD) {
 /** Opens the next-Saturday fixture between Ace Ventura (captain1) and Lobbyisten (captain3). */
 export async function openAceVsLobby(page: Page) {
   await page.goto("/schedule");
-  await page.getByRole("link", { name: /Ace Ventura.*Lobbyisten/s }).first().click();
+  await page.getByRole("link", { name: /Ace Ventura[\s\S]*Lobbyisten/ }).first().click();
   await expect(page.getByText("Voor de pauze · Gemengd")).toBeVisible();
 }

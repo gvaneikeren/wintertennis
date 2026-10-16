@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WinterTennis
 
-## Getting Started
+Mobile-first website for a Saturday-night indoor tennis competition: schedule, standings, line-ups, and score entry with approval by the opposing team. The UI is in Dutch.
 
-First, run the development server:
+## Local development
 
 ```bash
+cp .env.example .env.local && cp .env.example .env   # then fill in AUTH_SECRET
+npm install
+npm run db:up && npx prisma migrate dev && npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Seeded logins: `admin@example.com` and `captain1@example.com` … `captain6@example.com`. The password for all of them is `wintertennis-dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment (Vercel + Neon)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. In Vercel, import this GitHub repo.
+2. Under **Storage**, add **Neon Postgres**. This sets `DATABASE_URL`.
+3. Add the environment variables `AUTH_SECRET`, `APP_URL`, and optionally `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` and `SMTP_*` (see `.env.example`).
+4. Set **Build Command** to `npm run vercel-build`. It runs the database migrations before the build.
+5. After the first deploy, create the admin. Pull the production database URL first, because the script needs it:
+   `npx vercel env pull .env.production.local && DATABASE_URL=... npm run create-admin -- you@example.com`
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `CLAUDE.md` for architecture and `SECURITY.md` for the OWASP checklist.

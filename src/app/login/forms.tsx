@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { loginAction, requestPasswordResetAction } from "@/app/actions/auth";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState(loginAction, undefined);
+  const [email, setEmail] = useState(""); // controlled so it survives a failed attempt
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
       {state?.error && <Alert>{state.error}</Alert>}
       <Field label="E-mail">
-        <Input name="email" type="email" autoComplete="email" inputMode="email" required />
+        <Input name="email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </Field>
       <Field label="Wachtwoord">
         <Input name="password" type="password" autoComplete="current-password" required />

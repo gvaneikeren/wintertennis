@@ -100,6 +100,7 @@ test("dispute and resubmit", async ({ browser }) => {
   await awayCard.getByRole("button", { name: "Set 1 Ace Ventura min één" }).click();
   await awayCard.getByRole("button", { name: "Set 1 Lobbyisten plus één" }).click();
   await awayCard.getByRole("button", { name: "Uitslag versturen" }).click();
+  await expect(awayCard.getByText("Wacht op akkoord").first()).toBeVisible();
 
   await home.reload();
   await home.locator('[data-match="5"]').getByRole("button", { name: "Akkoord" }).click();
@@ -125,9 +126,11 @@ test("captain invites a member who registers via the link", async ({ browser }) 
   const email = `lid-${Date.now()}@example.com`;
   await member.getByLabel("Naam").fill("Nieuw Teamlid");
   await member.getByLabel("E-mail").fill(email);
+  // Bypass the browser's minLength check to verify the server-side rule.
+  await member.getByLabel("Wachtwoord").evaluate((el) => el.removeAttribute("minlength"));
   await member.getByLabel("Wachtwoord").fill("kort");
   await member.getByRole("button", { name: "Account aanmaken" }).click();
-  await expect(member.getByText(/minimaal 10 tekens/)).toBeVisible();
+  await expect(member.getByText("Wachtwoord moet minimaal 10 tekens zijn")).toBeVisible();
   await member.getByLabel("Wachtwoord").fill("een-lang-wachtwoord");
   await member.getByRole("button", { name: "Account aanmaken" }).click();
   await expect(member).toHaveURL(/\/team/);

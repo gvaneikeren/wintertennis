@@ -7,7 +7,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  globalSetup: process.env.E2E_BASE_URL ? undefined : "./e2e/global-setup.ts",
+  globalSetup: baseURL.includes("localhost") ? "./e2e/global-setup.ts" : undefined,
   use: { baseURL, trace: "retain-on-failure", locale: "nl-NL", timezoneId: "Europe/Amsterdam" },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
