@@ -3,8 +3,10 @@ import { AlertTriangle, ArrowRight, Clock } from "lucide-react";
 import { Card, Empty, buttonClass } from "@/components/ui";
 import { FixtureCard } from "@/components/fixture-card";
 import { StandingsTable } from "@/components/standings-table";
+import { Checklist } from "@/components/onboarding/checklist";
+import { teamOnboardingSteps } from "@/lib/onboarding";
 import { getCurrentUser } from "@/lib/server/auth-guards";
-import { getActionsNeeded, getActiveSeason, getSchedule, getStandings } from "@/lib/server/queries";
+import { getActionsNeeded, getActiveSeason, getSchedule, getStandings, getTeamOnboarding } from "@/lib/server/queries";
 import { formatDate, formatLongDate, nl } from "@/lib/nl";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +15,12 @@ export default async function HomePage() {
   const [user, season] = await Promise.all([getCurrentUser(), getActiveSeason()]);
   if (!season) return <Empty>{nl.noSeason}</Empty>;
 
-  const [evenings, rows, actions] = await Promise.all([
+  const firstTeam = user?.memberships[0];
+  const [evenings, rows, actions, onboarding] = await Promise.all([
     getSchedule(season.id),
     getStandings(season.id),
     user ? getActionsNeeded(user) : Promise.resolve([]),
+    user && firstTeam ? getTeamOnboarding(user, firstTeam.teamId) : Promise.resolve(null),
   ]);
   const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
   const next = evenings.find((e) => e.date >= today && e.fixtures.length > 0);
@@ -35,6 +39,10 @@ export default async function HomePage() {
           {next ? `Volgende speelavond: ${formatLongDate(next.date)}` : nl.tagline}
         </p>
       </section>
+
+      {user && firstTeam && onboarding && (
+        <Checklist steps={teamOnboardingSteps(onboarding)} storageKey={`wt:checklist:${user.id}:${firstTeam.teamId}`} />
+      )}
 
       {actions.length > 0 && (
         <section className="space-y-3" aria-labelledby="actions">

@@ -53,6 +53,12 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
           </p>
         </Card>
       )}
+      <p className="mt-4 text-center text-sm text-muted">
+        Na het aanmaken van je account helpt de app je op weg.{" "}
+        <Link href="/help" className="font-semibold text-brand">
+          Uitleg bekijken
+        </Link>
+      </p>
     </div>
   );
 }

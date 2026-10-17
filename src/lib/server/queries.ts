@@ -1,6 +1,8 @@
 import { prisma } from "./db";
 import { standings } from "@/lib/scoring";
 import type { CurrentUser } from "./auth-guards";
+import { formatDate } from "@/lib/nl";
+import type { AdminOnboardingInput, TeamOnboardingInput } from "@/lib/onboarding";
 
 const matchScoreSelect = { status: true, sets: { select: { setNo: true, played: true, homeGames: true, awayGames: true } } } as const;
 
@@ -94,4 +96,67 @@ export async function getActionsNeeded(user: CurrentUser) {
     byFixture.set(m.fixtureId, entry);
   }
   return [...byFixture.values()];
+}
+
+/** Counts for the "Aan de slag" checklist of one team, scoped to the user's own membership. */
+export async function getTeamOnboarding(user: CurrentUser, teamId: string): Promise<TeamOnboardingInput | null> {
+  const membership = user.memberships.find((m) => m.teamId === teamId);
+  if (!membership) return null;
+  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
+  const [players, memberships, openInvites, next] = await Promise.all([
+    prisma.player.findMany({ where: { teamId, active: true }, select: { gender: true, userId: true } }),
+    prisma.teamMembership.count({ where: { teamId } }),
+    prisma.invite.count({ where: { teamId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } } }),
+    prisma.fixture.findFirst({
+      where: { evening: { date: { gte: today }, season: { active: true } }, OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
+      orderBy: { evening: { date: "asc" } },
+      select: { id: true, homeTeamId: true, evening: { select: { date: true } }, matches: { select: { players: { select: { side: true } } } } },
+    }),
+  ]);
+  const ownSide = next ? (next.homeTeamId === teamId ? "HOME" : "AWAY") : null;
+  return {
+    isCaptain: membership.role === "CAPTAIN",
+    ladies: players.filter((p) => p.gender === "F").length,
+    men: players.filter((p) => p.gender === "M").length,
+    memberships,
+    openInvites,
+    linkedToPlayer: players.some((p) => p.userId === user.id),
+    nextFixture: next
+      ? {
+          id: next.id,
+          dateLabel: formatDate(next.evening.date),
+          matches: next.matches.length,
+          matchesWithFullLineup: next.matches.filter((m) => m.players.filter((p) => p.side === ownSide).length >= 2).length,
+        }
+      : null,
+  };
+}
+
+export async function getAdminOnboarding(): Promise<AdminOnboardingInput> {
+  const season = await getActiveSeason();
+  if (!season) return { hasSeason: false, teams: 0, teamsWithoutCaptain: 0, eveningsWithFixtures: 0 };
+  const [teams, eveningsWithFixtures] = await Promise.all([
+    prisma.seasonTeam.findMany({
+      where: { seasonId: season.id },
+      select: {
+        team: {
+          select: {
+            _count: {
+              select: {
+                memberships: { where: { role: "CAPTAIN" } },
+                invites: { where: { role: "CAPTAIN", acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } } },
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.evening.count({ where: { seasonId: season.id, fixtures: { some: {} } } }),
+  ]);
+  return {
+    hasSeason: true,
+    teams: teams.length,
+    teamsWithoutCaptain: teams.filter((t) => t.team._count.memberships === 0 && t.team._count.invites === 0).length,
+    eveningsWithFixtures,
+  };
 }

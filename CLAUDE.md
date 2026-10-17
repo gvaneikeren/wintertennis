@@ -51,6 +51,11 @@ The e2e flows are stateful and run serially on the `mobile-chrome` project only.
   - The current user is always reloaded from the DB in `getCurrentUser()`.
   - Sign-up only happens through invites. The invite token is hashed (SHA-256), single-use and valid for 7 days.
 - **Administrators:** `User.isAdmin`. Existing admins add more admins at `/admin/admins` (an existing account is promoted directly; a new email gets an account plus a 7-day set-password link). The last admin cannot be removed. Bootstrap the first admin with `npm run create-admin`.
+- **User guidance:**
+  - The manual content lives in `src/lib/help.ts` and renders at `/help`, with guides linked as `/help#<id>`. When you change a feature, update its guide there.
+  - Checklist rules are in `src/lib/onboarding.ts`, which is pure and unit tested; `getTeamOnboarding` and `getAdminOnboarding` supply the counts.
+  - The welcome sheet (`src/components/onboarding/welcome-sheet.tsx`), the checklist and the `Tip` component keep their "seen/dismissed" state in localStorage under `wt:` keys.
+  - In e2e tests, `login()` skips the welcome sheet unless `{ welcome: true }` is passed.
 - **Invites:** the admin invites captains; captains invite members. They go out by email (SMTP) or a WhatsApp `wa.me` link (no API involved), or as a copyable link.
 
 ## Conventions

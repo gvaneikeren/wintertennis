@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Check, CheckCheck, Minus, Pencil, Plus, RotateCcw, UserPlus, Users, X } from "lucide-react";
 import { Alert, Badge, Button, Card, Input } from "@/components/ui";
 import { Sheet } from "@/components/sheet";
+import { Tip } from "@/components/onboarding/tip";
 import { StatusBadge } from "@/components/status-badge";
 import { cn } from "@/lib/cn";
 import { nl } from "@/lib/nl";
@@ -95,6 +96,23 @@ export function FixtureView({ fixture, viewer, teamPlayers }: { fixture: Fixture
       {!viewer.loggedIn && (
         <div className="mb-5">
           <Alert tone="info">Log in om opstellingen en uitslagen in te voeren.</Alert>
+        </div>
+      )}
+
+      {viewer.side && toApprove > 0 && (
+        <div className="mb-5">
+          <Tip id="fixture-approve" title="De tegenstander wacht op jouw akkoord" help="goedkeuren">
+            Klopt de uitslag? Tik op <strong>Akkoord</strong>, of onderin op <strong>Alles akkoord</strong>. Klopt er iets niet? Tik op{" "}
+            <strong>Betwisten</strong> en schrijf kort wat er mis is.
+          </Tip>
+        </div>
+      )}
+      {viewer.side && toApprove === 0 && (
+        <div className="mb-5">
+          <Tip id="fixture-enter" title="Zo vul je deze wedstrijd in" help="uitslag-invoeren">
+            Tik per partij op <strong>Opstelling</strong> om je spelers te kiezen. Na de partij tik je op <strong>Uitslag invoeren</strong>. De
+            andere ploeg keurt je uitslag daarna goed.
+          </Tip>
         </div>
       )}
 

@@ -3,14 +3,17 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { Card, Empty, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/server/db";
-import { getActiveSeason } from "@/lib/server/queries";
+import { getActiveSeason, getAdminOnboarding } from "@/lib/server/queries";
+import { getCurrentUser } from "@/lib/server/auth-guards";
+import { Checklist } from "@/components/onboarding/checklist";
+import { adminOnboardingSteps } from "@/lib/onboarding";
 import { formatDate, nl } from "@/lib/nl";
 import { SeasonForm } from "./admin-forms";
 
 export const metadata: Metadata = { title: "Beheer" };
 
 export default async function AdminPage() {
-  const season = await getActiveSeason();
+  const [season, user, onboarding] = await Promise.all([getActiveSeason(), getCurrentUser(), getAdminOnboarding()]);
   const [teams, evenings, disputed, waiting] = season
     ? await Promise.all([
         prisma.seasonTeam.count({ where: { seasonId: season.id } }),
@@ -26,6 +29,8 @@ export default async function AdminPage() {
   return (
     <div className="space-y-7">
       <PageHeader title="Beheer" subtitle={season?.name ?? "Nog geen seizoen"} />
+
+      <Checklist title="Competitie klaarzetten" steps={adminOnboardingSteps(onboarding)} storageKey={`wt:checklist:admin:${user?.id}`} />
 
       {season && (
         <div className="grid grid-cols-3 gap-3">

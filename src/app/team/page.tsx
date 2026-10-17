@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Alert, Badge, Card, Empty, PageHeader } from "@/components/ui";
+import { Alert, Badge, Card, Empty, PageHeader, buttonClass } from "@/components/ui";
 import { FixtureCard } from "@/components/fixture-card";
 import { InviteShare } from "@/components/invite-share";
 import { getCurrentUser, isCaptain } from "@/lib/server/auth-guards";
@@ -9,6 +9,7 @@ import { prisma } from "@/lib/server/db";
 import { getActiveSeason } from "@/lib/server/queries";
 import { formatDate, nl } from "@/lib/nl";
 import { cn } from "@/lib/cn";
+import { Tip } from "@/components/onboarding/tip";
 import { AddPlayerForm, ClaimButton, MemberActions, PlayerActions, RevokeInviteButton } from "./team-forms";
 
 export const metadata: Metadata = { title: "Mijn team" };
@@ -24,15 +25,17 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       <div>
         <PageHeader title="Mijn team" />
         <Empty>
-          Je bent nog geen lid van een team. Vraag je aanvoerder om een uitnodiging.
-          {user.isAdmin && (
-            <>
-              {" "}
-              <Link href="/admin/teams" className="font-semibold text-brand">
+          <p>Je bent nog geen lid van een team. Vraag je aanvoerder om een uitnodiging via WhatsApp of e-mail.</p>
+          <div className="mt-4 flex flex-col gap-2">
+            {user.isAdmin && (
+              <Link href="/admin/teams" className={buttonClass("primary")}>
                 Naar teambeheer
               </Link>
-            </>
-          )}
+            )}
+            <Link href="/help#uitnodigen" className={buttonClass("outline")}>
+              Hoe werkt een uitnodiging?
+            </Link>
+          </div>
         </Empty>
       </div>
     );
@@ -116,6 +119,16 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             {ladies.length} dames · {men.length} heren
           </span>
         </div>
+        {captain && (
+          <Tip id="team-players" title="Spelers en invallers" help="spelers">
+            Zet minimaal 4 dames en 4 heren in je team. Invallers voeg je gewoon toe als extra speler; ze zijn daarna bij elke opstelling te kiezen.
+          </Tip>
+        )}
+        {!myPlayerId && (
+          <Tip id="team-claim" title="Sta jij in de lijst?" help="koppelen">
+            Tik bij je eigen naam op <strong>Dit ben ik</strong>, dan weet de app welke speler jij bent.
+          </Tip>
+        )}
         {(ladies.length < 4 || men.length < 4) && (
           <Alert tone="warn">Een team heeft minimaal 4 dames en 4 heren nodig.</Alert>
         )}
@@ -156,7 +169,14 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           <h2 className="text-lg font-bold">Teamleden met account</h2>
           {captain && <InviteShare teamId={teamId} teamName={team.name} role="MEMBER" label="+ Uitnodigen" />}
         </div>
-        <p className="text-sm text-muted">Teamleden kunnen opstellingen en uitslagen invoeren en uitslagen van de tegenstander goedkeuren.</p>
+        {captain && team.memberships.length <= 1 ? (
+          <Tip id="team-invite" title="Nodig je teamgenoten uit" help="uitnodigen">
+            Tik op <strong>+ Uitnodigen</strong> en deel de link via WhatsApp. Dan kunnen ook zij opstellingen en uitslagen invoeren en goedkeuren
+            als jij er niet bent.
+          </Tip>
+        ) : (
+          <p className="text-sm text-muted">Teamleden kunnen opstellingen en uitslagen invoeren en uitslagen van de tegenstander goedkeuren.</p>
+        )}
         <Card className="divide-y divide-border">
           {team.memberships.map((m) => (
             <div key={m.userId} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">

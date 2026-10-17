@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Alert, Card } from "@/components/ui";
 import { getCurrentUser } from "@/lib/server/auth-guards";
@@ -36,6 +37,11 @@ export default async function LoginPage({ searchParams }: Props) {
         </Card>
         <p className="text-center text-sm text-muted">
           Nog geen account? Je aanvoerder stuurt je een uitnodiging via WhatsApp of e-mail.
+        </p>
+        <p className="text-center text-sm">
+          <Link href="/help" className="inline-flex min-h-11 items-center font-semibold text-brand">
+            Hulp nodig? Bekijk de uitleg
+          </Link>
         </p>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, openAceVsLobby } from "./helpers";
+import { login, openAceVsLobby, skipWelcome } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -121,6 +121,7 @@ test("captain invites a member who registers via the link", async ({ browser }) 
   expect(decodeURIComponent(wa!)).toContain(link);
 
   const member = await (await browser.newContext()).newPage();
+  await skipWelcome(member);
   await member.goto(new URL(link).pathname);
   await expect(member.getByRole("heading", { name: "Welkom bij Ace Ventura" })).toBeVisible();
   const email = `lid-${Date.now()}@example.com`;
