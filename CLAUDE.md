@@ -23,6 +23,8 @@ E2E_BASE_URL=http://localhost:3001 npx playwright test -g "dispute" --project=mo
 npm run create-admin -- <email> [name]                # makes a user admin and prints a set-password link
 ```
 
+`e2e/idor.spec.ts` is an authorization regression suite: it logs in as one captain and invokes every mutating server action against another team's and other fixtures' ids (and anonymously), asserting each is denied by a guard. It reads action ids from Next's `.next/server/server-reference-manifest.json` and needs a seeded DB (`DATABASE_URL`).
+
 The e2e flows are stateful and run serially on the `mobile-chrome` project only. Other device projects run just the tests tagged `@public`.
 
 ## Domain rules (source of truth: `src/lib/scoring.ts`, `src/lib/schedule.ts`)

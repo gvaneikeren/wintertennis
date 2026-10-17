@@ -46,3 +46,7 @@ Email security issues to the maintainer (gvaneikeren@hotmail.com) instead of ope
 ## Privacy
 
 Anonymous visitors see team names, the schedule, scores and standings only. Player names, user names, email addresses and dispute comments are removed server-side for visitors who aren't logged in (`src/app/fixtures/[id]/page.tsx`). The invite page doesn't show who sent the invite and doesn't prefill the invitee's email. The e2e test "anonymous visitors see no personal data" checks the raw server responses.
+
+## Authorization regression tests
+
+`e2e/idor.spec.ts` exercises the real server-action HTTP path: a logged-in captain invokes every mutating action against another team's and other fixtures' ids, and an anonymous client invokes them with no session. Each must be denied by a guard (`Geen toegang` / `Log eerst in` / the admin-only reopen message), so removing a guard fails the suite. It also confirmed, when run as a pentest on 2026-10-17, that cross-team IDOR, privilege escalation to admin actions, self-approval of scores, and unauthenticated calls are all rejected.
