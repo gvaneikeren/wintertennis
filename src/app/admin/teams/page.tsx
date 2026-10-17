@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Badge, Card, Empty, PageHeader } from "@/components/ui";
 import { InviteShare } from "@/components/invite-share";
-import { RevokeInviteButton } from "@/app/team/team-forms";
+import { MemberActions, RevokeInviteButton } from "@/app/team/team-forms";
 import { prisma } from "@/lib/server/db";
 import { getActiveSeason } from "@/lib/server/queries";
 import { formatDate } from "@/lib/nl";
@@ -55,11 +55,14 @@ export default async function AdminTeamsPage() {
                   <Badge tone="warn">Nog geen aanvoerder</Badge>
                 ) : (
                   team.memberships.map((c) => (
-                    <div key={c.userId} className="text-sm">
-                      <Badge tone="brand" className="mr-2">
-                        Aanvoerder
-                      </Badge>
-                      {c.user.name ?? c.user.email}
+                    <div key={c.userId} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="min-w-0 truncate">
+                        <Badge tone="brand" className="mr-2">
+                          Aanvoerder
+                        </Badge>
+                        {c.user.name ?? c.user.email}
+                      </span>
+                      <MemberActions teamId={team.id} userId={c.userId} role="CAPTAIN" name={c.user.name ?? c.user.email} />
                     </div>
                   ))
                 )}

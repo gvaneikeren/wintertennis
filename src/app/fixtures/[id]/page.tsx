@@ -24,6 +24,9 @@ export default async function FixturePage({ params }: Props) {
   const mySide = user ? (isMember(user, fixture.homeTeamId) ? "HOME" : isMember(user, fixture.awayTeamId) ? "AWAY" : null) : null;
   const myTeamId = mySide === "HOME" ? fixture.homeTeamId : mySide === "AWAY" ? fixture.awayTeamId : null;
   const players = myTeamId ? await getTeamPlayers(myTeamId) : [];
+  // Privacy: anonymous visitors only see teams and scores. Player names and dispute comments
+  // (free text that may contain names) are stripped server-side so they never reach the browser.
+  const showPersonal = Boolean(user);
 
   return (
     <div>
@@ -44,9 +47,9 @@ export default async function FixturePage({ params }: Props) {
             type: m.type,
             status: m.status,
             submittedByTeamId: m.submittedByTeamId,
-            disputeComment: m.disputeComment,
+            disputeComment: showPersonal ? m.disputeComment : null,
             sets: m.sets.map((s) => ({ setNo: s.setNo, played: s.played, homeGames: s.homeGames, awayGames: s.awayGames })),
-            players: m.players.map((p) => ({ side: p.side, position: p.position, id: p.player.id, name: p.player.name, gender: p.player.gender })),
+            players: (showPersonal ? m.players : []).map((p) => ({ side: p.side, position: p.position, id: p.player.id, name: p.player.name, gender: p.player.gender })),
           })),
         }}
         viewer={{ loggedIn: Boolean(user), isAdmin: Boolean(user?.isAdmin), side: mySide, teamId: myTeamId }}

@@ -108,15 +108,31 @@ export function ClaimButton({ playerId }: { playerId: string }) {
   );
 }
 
-export function MemberActions({ teamId, userId, role }: { teamId: string; userId: string; role: "CAPTAIN" | "MEMBER" }) {
+export function MemberActions({
+  teamId,
+  userId,
+  role,
+  name,
+}: {
+  teamId: string;
+  userId: string;
+  role: "CAPTAIN" | "MEMBER";
+  name?: string;
+}) {
+  const who = name ?? (role === "CAPTAIN" ? "Aanvoerder" : "Lid");
   const [open, setOpen] = useState(false);
   const { pending, exec } = useRun();
   return (
     <>
-      <Button variant="ghost" size="icon" aria-label="Lid beheren" onClick={() => setOpen(true)}>
+      <Button variant="ghost" size="icon" aria-label={name ? `${name} beheren` : "Lid beheren"} onClick={() => setOpen(true)}>
         <MoreHorizontal className="h-5 w-5" />
       </Button>
-      <Sheet open={open} onOpenChange={setOpen} title="Teamlid beheren">
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title={role === "CAPTAIN" ? "Aanvoerder beheren" : "Teamlid beheren"}
+        description={name ? `${name}. Spelers, programma en uitslagen blijven bewaard.` : undefined}
+      >
         <div className="space-y-3">
           <Button
             variant="outline"
@@ -132,7 +148,10 @@ export function MemberActions({ teamId, userId, role }: { teamId: string; userId
             variant="danger"
             size="lg"
             disabled={pending}
-            onClick={() => confirm("Lid uit het team verwijderen?") && exec(() => removeMember(teamId, userId), "Lid verwijderd", () => setOpen(false))}
+            onClick={() =>
+              confirm(`${who} uit het team verwijderen? Diegene kan daarna niets meer invoeren voor dit team.`) &&
+              exec(() => removeMember(teamId, userId), `${who} verwijderd`, () => setOpen(false))
+            }
           >
             Uit team verwijderen
           </Button>

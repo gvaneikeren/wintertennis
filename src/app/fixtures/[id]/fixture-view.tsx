@@ -226,7 +226,7 @@ function MatchCard({
                   </div>
                 ))
               ) : (
-                <div className="text-muted italic">Nog niet bekend</div>
+                <div className="text-muted italic">{viewer.loggedIn ? "Nog niet bekend" : "Log in om spelers te zien"}</div>
               )}
             </div>
           );

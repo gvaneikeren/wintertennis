@@ -67,8 +67,19 @@ async function main() {
         include: { matches: true },
       });
       if (i === 0) {
-        // Past evening: all scores approved, with a mix of results.
+        // Past evening: line-ups set and all scores approved, with a mix of results.
+        const roster = async (teamId: string) => {
+          const ps = await prisma.player.findMany({ where: { teamId }, orderBy: { name: "asc" } });
+          return { F: ps.filter((p) => p.gender === "F"), M: ps.filter((p) => p.gender === "M") };
+        };
+        const sides = { HOME: await roster(fixture.homeTeamId), AWAY: await roster(fixture.awayTeamId) };
         for (const m of fixture.matches) {
+          for (const side of ["HOME", "AWAY"] as const) {
+            const r = sides[side];
+            const k = m.number - (m.type === "MIXED" ? 1 : m.type === "LADIES" ? 5 : 7);
+            const pair = m.type === "MIXED" ? [r.F[k], r.M[k]] : m.type === "LADIES" ? [r.F[k * 2], r.F[k * 2 + 1]] : [r.M[k * 2], r.M[k * 2 + 1]];
+            await prisma.matchPlayer.createMany({ data: pair.map((p, pos) => ({ matchId: m.id, side, position: pos + 1, playerId: p.id })) });
+          }
           const r = (m.number * 7 + j * 3) % 6;
           await prisma.matchSet.createMany({
             data: [

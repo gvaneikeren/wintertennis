@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/server/db";
-import { requireCaptain, requireTeamMember, requireUser, requireAdmin, run, UserError } from "@/lib/server/auth-guards";
+import { requireCaptain, requireTeamMember, requireUser, run, UserError } from "@/lib/server/auth-guards";
 import { audit } from "@/lib/server/audit";
 import { newToken } from "@/lib/server/tokens";
 import { appUrl, mailConfigured, sendMail } from "@/lib/server/mail";
@@ -94,7 +94,8 @@ export async function createInvite(input: unknown) {
     const { teamId, role, channel } = p.data;
     const email = p.data.email?.toLowerCase().trim() || null;
     const phone = p.data.phone?.trim() || null;
-    const user = role === "CAPTAIN" ? await requireAdmin() : await requireCaptain(teamId);
+    // Captains (and admins) can invite; invitees from a captain get the same captain rights.
+    const user = await requireCaptain(teamId);
     if (!(await rateLimit(`invite:${user.id}`, 30, 60 * 60))) throw new UserError("Te veel uitnodigingen, probeer het later opnieuw");
     if (channel === "EMAIL" && !email) throw new UserError("Vul een e-mailadres in");
     if (channel === "WHATSAPP" && phone && !normalizePhone(phone)) throw new UserError("Ongeldig telefoonnummer");
@@ -133,7 +134,7 @@ export async function revokeInvite(inviteId: string) {
   return run(async () => {
     const invite = await prisma.invite.findUnique({ where: { id: id.parse(inviteId) } });
     if (!invite) throw new UserError("Uitnodiging niet gevonden");
-    const user = invite.role === "CAPTAIN" ? await requireAdmin() : await requireCaptain(invite.teamId);
+    const user = await requireCaptain(invite.teamId);
     await prisma.invite.update({ where: { id: invite.id }, data: { revokedAt: new Date() } });
     await audit({ userId: user.id, action: "invite.revoke", entity: "Invite", entityId: invite.id });
     revalidatePath("/team");
@@ -154,6 +155,7 @@ export async function setMemberRole(teamId: string, userId: string, role: "CAPTA
     await prisma.teamMembership.update({ where: { userId_teamId: { userId: uid, teamId: tid } }, data: { role: r } });
     await audit({ userId: actor.id, action: "member.role", entity: "Team", entityId: tid, details: { userId: uid, role: r } });
     revalidatePath("/team");
+    revalidatePath("/admin/teams");
   });
 }
 
@@ -163,8 +165,11 @@ export async function removeMember(teamId: string, userId: string) {
     const uid = id.parse(userId);
     const actor = await requireCaptain(tid);
     if (uid === actor.id) throw new UserError("Je kunt jezelf niet verwijderen");
-    await prisma.teamMembership.delete({ where: { userId_teamId: { userId: uid, teamId: tid } } });
+    // Only the account's access is removed; players, line-ups and scores stay untouched.
+    const removed = await prisma.teamMembership.deleteMany({ where: { userId: uid, teamId: tid } });
+    if (removed.count === 0) throw new UserError("Dit lid zit niet (meer) in het team");
     await audit({ userId: actor.id, action: "member.remove", entity: "Team", entityId: tid, details: { userId: uid } });
     revalidatePath("/team");
+    revalidatePath("/admin/teams");
   });
 }

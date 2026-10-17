@@ -16,12 +16,16 @@ export function InviteShare({
   teamName,
   role,
   label,
+  title,
+  description,
   variant = "primary",
 }: {
   teamId: string;
   teamName: string;
   role: "CAPTAIN" | "MEMBER";
   label: string;
+  title?: string;
+  description?: string;
   variant?: "primary" | "outline";
 }) {
   const [open, setOpen] = useState(false);
@@ -87,8 +91,8 @@ export function InviteShare({
       <Sheet
         open={open}
         onOpenChange={reset}
-        title={role === "CAPTAIN" ? `Aanvoerder uitnodigen` : `Teamlid uitnodigen`}
-        description={`Voor team ${teamName}. De link is 7 dagen geldig en werkt één keer.`}
+        title={title ?? (role === "CAPTAIN" ? `Aanvoerder uitnodigen` : `Teamlid uitnodigen`)}
+        description={`${description ? `${description} ` : ""}Voor team ${teamName}. De link is 7 dagen geldig en werkt één keer.`}
       >
         {!result ? (
           <div className="space-y-4">

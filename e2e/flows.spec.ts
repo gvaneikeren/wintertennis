@@ -13,6 +13,31 @@ test("public pages render in Dutch @public", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Programma", level: 1 })).toBeVisible();
 });
 
+test("anonymous visitors see no personal data @public", async ({ page, request }) => {
+  const players = /\b(Anna|Bo|Carmen|Dewi|Eva|Fleur|Koen|Lars|Mats|Niels|Olaf|Pim) [A-Z][\w-]+/;
+  for (const path of ["/", "/schedule", "/standings", "/help"]) {
+    const html = await (await request.get(path)).text();
+    expect(html, path).not.toMatch(players);
+    expect(html, path).not.toMatch(/[\w.+-]+@example\.com/);
+  }
+  // Last week's Ace Ventura – Netjes has full line-ups in the seed.
+  await page.goto("/schedule");
+  await page.getByRole("link", { name: /Ace Ventura[\s\S]*Netjes/ }).first().click();
+  await expect(page.getByText("Log in om spelers te zien").first()).toBeVisible();
+  // Names must not be in the server response at all, not just hidden in the UI.
+  const html = await (await request.get(page.url())).text();
+  expect(html).not.toMatch(players);
+  expect(html).not.toMatch(/[\w.+-]+@example\.com/);
+});
+
+test("logged-in users do see the line-ups", async ({ page }) => {
+  await login(page, "captain2@example.com");
+  await page.goto("/schedule");
+  await page.getByRole("link", { name: /Ace Ventura[\s\S]*Netjes/ }).first().click();
+  await expect(page.getByText("Anna Ventura").first()).toBeVisible();
+  await expect(page.getByText("Log in om spelers te zien")).toHaveCount(0);
+});
+
 test("anonymous users cannot reach team or admin pages @public", async ({ page }) => {
   await page.goto("/team");
   await expect(page).toHaveURL(/\/login/);
@@ -107,7 +132,7 @@ test("dispute and resubmit", async ({ browser }) => {
   await expect(home.locator('[data-match="5"]').getByText("Akkoord", { exact: true })).toBeVisible();
 });
 
-test("captain invites a member who registers via the link", async ({ browser }) => {
+test("captain invites a teammate who registers and gets captain rights", async ({ browser }) => {
   const cap = await (await browser.newContext()).newPage();
   await login(cap, "captain1@example.com");
   await cap.goto("/team");
@@ -136,6 +161,9 @@ test("captain invites a member who registers via the link", async ({ browser }) 
   await member.getByRole("button", { name: "Account aanmaken" }).click();
   await expect(member).toHaveURL(/\/team/);
   await expect(member.getByRole("heading", { name: "Ace Ventura" })).toBeVisible();
+  // Same rights as the inviting captain: captain badge and the invite button.
+  await expect(member.getByRole("main").getByText("Aanvoerder", { exact: true }).first()).toBeVisible();
+  await expect(member.getByRole("button", { name: "+ Uitnodigen" })).toBeVisible();
 
   // The link is single-use
   const again = await (await browser.newContext()).newPage();
@@ -201,4 +229,21 @@ test("admin renames a team and its schedule and standings follow", async ({ page
   await page.getByLabel("Teamnaam").fill("Netjes");
   await page.getByRole("button", { name: "Opslaan" }).click();
   await expect(page.getByText("Team heet nu Netjes")).toBeVisible();
+});
+
+test("admin removes a captain from a team", async ({ browser }) => {
+  const admin = await (await browser.newContext()).newPage();
+  await login(admin, "admin@example.com");
+  await admin.goto("/admin/teams");
+  admin.on("dialog", (d) => d.accept());
+  await admin.getByRole("button", { name: "Aanvoerder Break Point beheren" }).click();
+  await admin.getByRole("dialog").getByRole("button", { name: "Uit team verwijderen" }).click();
+  await expect(admin.getByText("Aanvoerder Break Point verwijderd")).toBeVisible();
+  await expect(admin.getByRole("button", { name: "Aanvoerder Break Point beheren" })).toHaveCount(0);
+
+  // The removed captain no longer has a team.
+  const cap = await (await browser.newContext()).newPage();
+  await login(cap, "captain4@example.com");
+  await cap.goto("/team");
+  await expect(cap.getByText("Je bent nog geen lid van een team.")).toBeVisible();
 });

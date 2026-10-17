@@ -30,7 +30,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Welkom bij {invite.team.name}</h1>
         <p className="mt-1 text-sm text-muted">
-          {invite.createdBy.name ? `${invite.createdBy.name} nodigt je uit` : "Je bent uitgenodigd"} als{" "}
+          Je bent uitgenodigd als{" "}
           <strong>{nl.role[invite.role].toLowerCase()}</strong>.
         </p>
       </div>
@@ -44,7 +44,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         </Card>
       ) : (
         <Card className="space-y-4 p-5">
-          <RegisterForm token={token} email={invite.email ?? ""} />
+          <RegisterForm token={token} />
           <p className="text-center text-sm text-muted">
             Al een account?{" "}
             <Link href={`/login?next=/invite/${encodeURIComponent(token)}`} className="font-semibold text-brand">

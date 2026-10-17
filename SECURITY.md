@@ -42,3 +42,7 @@ The CI audit step reports these findings but does not fail the build. Review thi
 ## Reporting
 
 Email security issues to the maintainer (gvaneikeren@hotmail.com) instead of opening a public issue.
+
+## Privacy
+
+Anonymous visitors see team names, the schedule, scores and standings only. Player names, user names, email addresses and dispute comments are removed server-side for visitors who aren't logged in (`src/app/fixtures/[id]/page.tsx`). The invite page doesn't show who sent the invite and doesn't prefill the invitee's email. The e2e test "anonymous visitors see no personal data" checks the raw server responses.

@@ -7,7 +7,7 @@ export async function findValidInvite(token: string) {
   if (!token || token.length > 100) return null;
   const invite = await prisma.invite.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { team: { select: { id: true, name: true } }, createdBy: { select: { name: true } } },
+    include: { team: { select: { id: true, name: true } } },
   });
   if (!invite || invite.acceptedAt || invite.revokedAt || invite.expiresAt < new Date()) return null;
   return invite;

@@ -167,7 +167,16 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Teamleden met account</h2>
-          {captain && <InviteShare teamId={teamId} teamName={team.name} role="MEMBER" label="+ Uitnodigen" />}
+          {captain && (
+            <InviteShare
+              teamId={teamId}
+              teamName={team.name}
+              role="CAPTAIN"
+              label="+ Uitnodigen"
+              title="Teamgenoot uitnodigen"
+              description="Diegene krijgt dezelfde rechten als jij: spelers beheren, uitnodigen en uitslagen invoeren en goedkeuren."
+            />
+          )}
         </div>
         {captain && team.memberships.length <= 1 ? (
           <Tip id="team-invite" title="Nodig je teamgenoten uit" help="uitnodigen">
@@ -186,7 +195,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={m.role === "CAPTAIN" ? "brand" : "neutral"}>{nl.role[m.role]}</Badge>
-                {captain && m.userId !== user.id && <MemberActions teamId={teamId} userId={m.userId} role={m.role} />}
+                {captain && m.userId !== user.id && <MemberActions teamId={teamId} userId={m.userId} role={m.role} name={m.user.name ?? m.user.email} />}
               </div>
             </div>
           ))}

@@ -5,10 +5,10 @@ import { toast } from "sonner";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { acceptInviteAction, registerWithInviteAction } from "@/app/actions/auth";
 
-export function RegisterForm({ token, email }: { token: string; email: string }) {
+export function RegisterForm({ token }: { token: string }) {
   const [state, action, pending] = useActionState(registerWithInviteAction, undefined);
   // Controlled inputs: React resets uncontrolled form fields after an action, which would wipe them on an error.
-  const [values, setValues] = useState({ name: "", email, password: "" });
+  const [values, setValues] = useState({ name: "", email: "", password: "" });
   const bind = (k: keyof typeof values) => ({ value: values[k], onChange: (e: React.ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [k]: e.target.value })) });
   return (
     <form action={action} className="space-y-4">

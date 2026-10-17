@@ -56,11 +56,12 @@ The e2e flows are stateful and run serially on the `mobile-chrome` project only.
   - Checklist rules are in `src/lib/onboarding.ts`, which is pure and unit tested; `getTeamOnboarding` and `getAdminOnboarding` supply the counts.
   - The welcome sheet (`src/components/onboarding/welcome-sheet.tsx`), the checklist and the `Tip` component keep their "seen/dismissed" state in localStorage under `wt:` keys.
   - In e2e tests, `login()` skips the welcome sheet unless `{ welcome: true }` is passed.
-- **Invites:** the admin invites captains; captains invite members. They go out by email (SMTP) or a WhatsApp `wa.me` link (no API involved), or as a copyable link.
+- **Invites:** the admin invites captains, and captains invite teammates who also become `CAPTAIN` with the same rights. `MEMBER` remains for older accounts; promote them with "Maak aanvoerder". They go out by email (SMTP) or a WhatsApp `wa.me` link (no API involved), or as a copyable link.
 
 ## Conventions
 
 - Shared Dutch strings and date formatting live in `src/lib/nl.ts`. Dates are stored as UTC dates (`@db.Date`).
+- **Privacy:** pages reachable without login (`/`, `/schedule`, `/standings`, `/fixtures/[id]`, `/help`, `/login`, `/invite/[token]`) must not include personal data such as player or user names, email addresses or free-text comments. Strip it server-side before props reach client components; hiding it with CSS is not enough. Team names are public. The `@public` e2e test checks the raw HTML.
 - Validate all input with Zod (v4: `z.email()`). Never use `$queryRawUnsafe`.
 - **UI rules:**
   - Use the shared components in `src/components/ui`, `Sheet` (a bottom sheet on mobile) and the color tokens in `globals.css` (`bg-surface`, `text-muted`, `bg-brand` and so on).
