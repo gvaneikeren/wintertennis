@@ -5,7 +5,7 @@ import { RevokeInviteButton } from "@/app/team/team-forms";
 import { prisma } from "@/lib/server/db";
 import { getActiveSeason } from "@/lib/server/queries";
 import { formatDate } from "@/lib/nl";
-import { CreateTeamForm, RemoveTeamButton } from "../admin-forms";
+import { CreateTeamForm, RemoveTeamButton, RenameTeamButton } from "../admin-forms";
 
 export const metadata: Metadata = { title: "Teams" };
 
@@ -45,7 +45,10 @@ export default async function AdminTeamsPage() {
                     {f} dames · {m} heren · {team._count.memberships} accounts
                   </div>
                 </div>
-                <RemoveTeamButton seasonId={season.id} teamId={team.id} name={team.name} />
+                <div className="flex shrink-0">
+                  <RenameTeamButton teamId={team.id} name={team.name} />
+                  <RemoveTeamButton seasonId={season.id} teamId={team.id} name={team.name} />
+                </div>
               </div>
               <div className="space-y-1">
                 {team.memberships.length === 0 ? (

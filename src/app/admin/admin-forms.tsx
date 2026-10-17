@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button, Card, Field, Input, Select } from "@/components/ui";
+import { Sheet } from "@/components/sheet";
 import { cn } from "@/lib/cn";
 import {
   addEvenings,
@@ -13,6 +14,7 @@ import {
   deleteEvening,
   deletePairing,
   removeTeamFromSeason,
+  renameTeam,
   updateSeason,
 } from "@/app/actions/admin";
 
@@ -89,6 +91,43 @@ export function CreateTeamForm({ seasonId }: { seasonId: string }) {
         <Plus className="h-5 w-5" />
       </Button>
     </form>
+  );
+}
+
+export function RenameTeamButton({ teamId, name }: { teamId: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(name);
+  const { pending, exec } = useRun();
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={`${name} hernoemen`}
+        onClick={() => {
+          setValue(name);
+          setOpen(true);
+        }}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen} title="Team hernoemen" description="Programma, uitslagen, spelers en stand blijven behouden.">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            exec(() => renameTeam(teamId, value), `Team heet nu ${value.trim()}`, () => setOpen(false));
+          }}
+        >
+          <Field label="Teamnaam">
+            <Input value={value} onChange={(e) => setValue(e.target.value)} maxLength={40} autoFocus />
+          </Field>
+          <Button size="lg" className="w-full" disabled={pending || value.trim().length < 2 || value.trim() === name}>
+            Opslaan
+          </Button>
+        </form>
+      </Sheet>
+    </>
   );
 }
 

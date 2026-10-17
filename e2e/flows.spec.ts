@@ -175,3 +175,29 @@ test("admin adds a new administrator who sets a password", async ({ browser }) =
   await second.goto("/admin/admins");
   await expect(second.getByRole("heading", { name: "Beheerders" })).toBeVisible();
 });
+
+test("admin renames a team and its schedule and standings follow", async ({ page }) => {
+  await login(page, "admin@example.com");
+  await page.goto("/admin/teams");
+  await page.getByRole("button", { name: "Netjes hernoemen" }).click();
+  const field = page.getByLabel("Teamnaam");
+  await field.fill("Lobbyisten");
+  await page.getByRole("button", { name: "Opslaan" }).click();
+  await expect(page.getByText("Er bestaat al een team met deze naam")).toBeVisible();
+  await field.fill("Netjes Nieuw");
+  await page.getByRole("button", { name: "Opslaan" }).click();
+  await expect(page.getByText("Team heet nu Netjes Nieuw")).toBeVisible();
+
+  await page.goto("/standings");
+  await expect(page.getByText("Netjes Nieuw").first()).toBeVisible();
+  await page.goto("/schedule");
+  await expect(page.getByText("Netjes Nieuw").first()).toBeVisible();
+  await expect(page.getByText(/^Netjes$/)).toHaveCount(0);
+
+  // Restore the seed name so reruns against the same database still work.
+  await page.goto("/admin/teams");
+  await page.getByRole("button", { name: "Netjes Nieuw hernoemen" }).click();
+  await page.getByLabel("Teamnaam").fill("Netjes");
+  await page.getByRole("button", { name: "Opslaan" }).click();
+  await expect(page.getByText("Team heet nu Netjes")).toBeVisible();
+});

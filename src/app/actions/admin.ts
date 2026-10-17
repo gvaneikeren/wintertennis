@@ -62,11 +62,18 @@ export async function createTeam(seasonId: string, name: string) {
 export async function renameTeam(teamId: string, name: string) {
   return run(async () => {
     const admin = await requireAdmin();
-    const n = z.string().trim().min(2).max(40).safeParse(name);
-    if (!n.success) throw new UserError("Ongeldige teamnaam");
-    await prisma.team.update({ where: { id: id.parse(teamId) }, data: { name: n.data } });
-    await audit({ userId: admin.id, action: "team.rename", entity: "Team", entityId: teamId, details: { name: n.data } });
-    revalidateAll();
+    const tid = id.parse(teamId);
+    const n = z.string().trim().min(2, "Teamnaam is te kort").max(40, "Teamnaam is te lang").safeParse(name);
+    if (!n.success) throw new UserError(n.error.issues[0].message);
+    // Fixtures, players and scores reference the team by id, so renaming keeps all planning and results.
+    const team = await prisma.team.findUnique({ where: { id: tid } });
+    if (!team) throw new UserError("Team niet gevonden");
+    if (team.name === n.data) return;
+    const taken = await prisma.team.findFirst({ where: { name: { equals: n.data, mode: "insensitive" }, id: { not: tid } } });
+    if (taken) throw new UserError("Er bestaat al een team met deze naam");
+    await prisma.team.update({ where: { id: tid }, data: { name: n.data } });
+    await audit({ userId: admin.id, action: "team.rename", entity: "Team", entityId: tid, details: { from: team.name, to: n.data } });
+    revalidatePath("/", "layout"); // the name appears on schedule, standings, fixture and team pages
   });
 }
 
