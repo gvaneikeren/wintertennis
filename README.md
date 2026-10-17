@@ -16,7 +16,7 @@ Seeded logins: `admin@example.com` and `captain1@example.com` … `captain6@exam
 ## Deployment (Vercel + Neon)
 
 1. In Vercel, import this GitHub repo.
-2. Under **Storage**, add **Neon Postgres**. This sets `DATABASE_URL`.
+2. Under **Storage**, add **Neon Postgres**. This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (used for migrations).
 3. Add the environment variables `AUTH_SECRET`, `APP_URL`, and optionally `SMTP_*` for email (see `.env.example`).
 4. Set **Build Command** to `npm run vercel-build`. It runs the database migrations before the build.
 5. After the first deploy, create the admin. Pull the production database URL first, because the script needs it:
